@@ -1,3 +1,5 @@
+use minifb::Key;
+
 use super::types::Coords;
 
 pub enum CollisionShape {
@@ -11,4 +13,6 @@ pub trait GameObject {
 
     fn get_coords(&self) -> &Coords;
     fn set_coords(&mut self, coords: Coords);
+
+    fn handle_input(&mut self, _keys: &[Key]) {}
 }

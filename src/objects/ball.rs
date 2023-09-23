@@ -1,3 +1,5 @@
+use minifb::Key;
+
 use crate::engine::{
     game_object::{CollisionShape, GameObject},
     types::Coords,
@@ -53,5 +55,11 @@ impl GameObject for Ball {
 
     fn set_coords(&mut self, coords: Coords) {
         self.coords = coords;
+    }
+
+    fn handle_input(&mut self, keys: &[Key]) {
+        if keys.contains(&Key::A) {}
+        if keys.contains(&Key::D) {}
+        if keys.contains(&Key::W) {}
     }
 }

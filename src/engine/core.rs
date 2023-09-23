@@ -30,56 +30,6 @@ impl Engine {
         })
     }
 
-    pub fn run(&mut self, window_title: &str) -> Result<(), anyhow::Error> {
-        self.window = Some(Window::new(
-            window_title,
-            self.window_size.width,
-            self.window_size.height,
-            WindowOptions {
-                scale_mode: ScaleMode::AspectRatioStretch,
-                ..WindowOptions::default()
-            },
-        )?);
-
-        while self.window.as_ref().unwrap().is_open()
-            && !self.window.as_ref().unwrap().is_key_down(Key::Escape)
-        {
-            let start_time = std::time::Instant::now();
-
-            // clear the display buffer
-            self.buffer.iter_mut().for_each(|p| *p = 0);
-
-            for object in self.objects.iter_mut() {
-                // re-calculate the velocities of the object
-                Engine::calc_velocities(object);
-
-                // apply the velocities of the object
-                Engine::apply_velocities(object);
-
-                // perform collision checks on objects
-                Engine::collision_checks(&self.window_size, object);
-
-                // draw the object
-                Engine::draw(&mut self.buffer, &self.window_size, object);
-            }
-
-            // reflect the display buffer changes
-            self.window.as_mut().unwrap().update_with_buffer(
-                &self.buffer,
-                self.window_size.width,
-                self.window_size.height,
-            )?;
-
-            // we've done everything we needed to this frame,
-            // so we can sleep until the next frame is needed.
-            std::thread::sleep(
-                std::time::Duration::from_secs_f64(DT).saturating_sub(start_time.elapsed()),
-            );
-        }
-
-        Ok(())
-    }
-
     pub fn add_game_object(&mut self, game_object: impl GameObject + 'static) {
         self.objects.push(InternalGameObject {
             object: Box::new(game_object),
@@ -181,5 +131,60 @@ impl Engine {
                 }
             }
         }
+    }
+}
+
+// main run function -- sets up the window and the game loop
+impl Engine {
+    pub fn run(&mut self, window_title: &str) -> Result<(), anyhow::Error> {
+        self.window = Some(Window::new(
+            window_title,
+            self.window_size.width,
+            self.window_size.height,
+            WindowOptions {
+                scale_mode: ScaleMode::AspectRatioStretch,
+                ..WindowOptions::default()
+            },
+        )?);
+
+        let keys = self.window.as_ref().unwrap().get_keys();
+        while self.window.as_ref().unwrap().is_open() && !keys.contains(&Key::Escape) {
+            let start_time = std::time::Instant::now();
+
+            // clear the display buffer
+            self.buffer.iter_mut().for_each(|p| *p = 0);
+
+            for object in self.objects.iter_mut() {
+                // re-calculate the velocities of the object
+                Engine::calc_velocities(object);
+
+                // apply the velocities to the coordinates
+                Engine::apply_velocities(object);
+
+                // perform collision checks with the window
+                Engine::collision_checks(&self.window_size, object);
+
+                // allow the object to react to pressed keys
+                object.object.handle_input(&keys);
+
+                // draw the object on the buffer at it's coords
+                Engine::draw(&mut self.buffer, &self.window_size, object);
+            }
+
+            // reflect the display buffer changes
+            self.window.as_mut().unwrap().update_with_buffer(
+                &self.buffer,
+                self.window_size.width,
+                self.window_size.height,
+            )?;
+
+            // we've done everything we needed to this frame,
+            // so we can sleep until the next frame is needed.
+            std::thread::sleep(
+                std::time::Duration::from_secs_f64(DT).saturating_sub(start_time.elapsed()),
+            );
+        }
+
+        Ok(())
     }
 }
