@@ -2,7 +2,7 @@ use minifb::{Key, ScaleMode, Window, WindowOptions};
 
 use super::{
     constants::*,
-    game_object::GameObject,
+    game_object::{CollisionShape, GameObject},
     types::{Coords, WindowSize},
 };
 
@@ -57,7 +57,7 @@ impl Engine {
                 Engine::apply_velocities(object);
 
                 // perform collision checks on objects
-                Engine::collision_checks(object);
+                Engine::collision_checks(&self.window_size, object);
 
                 // draw the object
                 Engine::draw(&mut self.buffer, &self.window_size, object);
@@ -92,8 +92,13 @@ impl Engine {
 // internal functions
 impl Engine {
     fn calc_velocities(internal_object: &mut InternalGameObject) {
-        // TODO: air resistance
-        // internal_object.vy += GRAVITY * DT;
+        // apply gravity
+        let gravity = GRAVITY * internal_object.object.weight_factor() * DT;
+        internal_object.vy += gravity;
+
+        // apply air drag
+        internal_object.vx *= 1.0 - (AIR_RESISTANCE * DT);
+        internal_object.vy *= 1.0 - (AIR_RESISTANCE * DT);
     }
 
     fn apply_velocities(internal_object: &mut InternalGameObject) {
@@ -103,7 +108,36 @@ impl Engine {
         internal_object.object.set_coords(Coords { x, y });
     }
 
-    fn collision_checks(internal_object: &mut InternalGameObject) {}
+    fn collision_checks(window_size: &WindowSize, internal_object: &mut InternalGameObject) {
+        match internal_object.object.collision_shape() {
+            CollisionShape::Circle(radius) => {
+                let mut coords = internal_object.object.get_coords().clone();
+                let diameter = 2.0 * radius;
+
+                if coords.x - diameter < 0.0 {
+                    coords.x = diameter;
+                    internal_object.vx = -internal_object.vx * COLLISION_DAMPING_FACTOR;
+                }
+
+                if coords.x + diameter > window_size.width as f64 {
+                    coords.x = window_size.width as f64 - diameter;
+                    internal_object.vx = -internal_object.vx * COLLISION_DAMPING_FACTOR;
+                }
+
+                if coords.y - diameter < 0.0 {
+                    coords.y = diameter;
+                    internal_object.vy = -internal_object.vy * COLLISION_DAMPING_FACTOR;
+                }
+
+                if coords.y + diameter > window_size.height as f64 {
+                    coords.y = window_size.height as f64 - diameter;
+                    internal_object.vy = -internal_object.vy * COLLISION_DAMPING_FACTOR;
+                }
+
+                internal_object.object.set_coords(coords);
+            }
+        }
+    }
 
     fn draw(buffer: &mut Vec<u32>, window_size: &WindowSize, internal_object: &InternalGameObject) {
         let object = &internal_object.object;
@@ -129,8 +163,7 @@ impl Engine {
         raster_vecs: Vec<Vec<u32>>,
         coords: &Coords,
     ) {
-        let object_height = raster_vecs.len();
-        let object_width = raster_vecs.iter().map(|row| row.len()).max().unwrap_or(0); // Get max width
+        let object_width = raster_vecs.iter().map(|row| row.len()).max().unwrap_or(0);
 
         for (dy, row) in raster_vecs.iter().enumerate() {
             for dx in 0..object_width {

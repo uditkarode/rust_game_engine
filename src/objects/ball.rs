@@ -1,4 +1,7 @@
-use crate::engine::{game_object::GameObject, types::Coords};
+use crate::engine::{
+    game_object::{CollisionShape, GameObject},
+    types::Coords,
+};
 
 pub struct Ball {
     coords: Coords,
@@ -18,12 +21,12 @@ impl Ball {
 }
 
 impl GameObject for Ball {
-    fn weight(&self) -> i32 {
-        1
+    fn weight_factor(&self) -> f64 {
+        1.2
     }
 
-    fn bounciness(&self) -> i32 {
-        1
+    fn collision_shape(&self) -> CollisionShape {
+        return CollisionShape::Circle(self.radius);
     }
 
     fn draw(&self) -> Vec<Vec<u32>> {
