@@ -60,7 +60,7 @@ impl Engine {
                 Engine::collision_checks(object);
 
                 // draw the object
-                Engine::draw(&mut self.buffer, object);
+                Engine::draw(&mut self.buffer, &self.window_size, object);
             }
 
             // reflect the display buffer changes
@@ -93,7 +93,7 @@ impl Engine {
 impl Engine {
     fn calc_velocities(internal_object: &mut InternalGameObject) {
         // TODO: air resistance
-        internal_object.vy += GRAVITY * DT;
+        // internal_object.vy += GRAVITY * DT;
     }
 
     fn apply_velocities(internal_object: &mut InternalGameObject) {
@@ -105,40 +105,45 @@ impl Engine {
 
     fn collision_checks(internal_object: &mut InternalGameObject) {}
 
-    fn draw(buffer: &mut Vec<u32>, internal_object: &InternalGameObject) {
+    fn draw(buffer: &mut Vec<u32>, window_size: &WindowSize, internal_object: &InternalGameObject) {
         let object = &internal_object.object;
         let coords = object.get_coords();
         let raster_vecs = object.draw();
-        Engine::draw_at(buffer, raster_vecs, coords);
+
+        Engine::draw_at(
+            buffer,
+            window_size.width,
+            window_size.height,
+            raster_vecs,
+            coords,
+        );
     }
 }
 
 // internal utils
 impl Engine {
-    fn draw_at(buffer: &mut Vec<u32>, raster_vecs: Vec<Vec<u32>>, coords: &Coords) {
-        fn draw_at(
-            buffer: &mut Vec<u32>,
-            buffer_width: usize,
-            buffer_height: usize,
-            raster_vecs: Vec<Vec<u32>>,
-            coords: &Coords,
-        ) {
-            let object_height = raster_vecs.len();
-            let object_width = raster_vecs.iter().map(|row| row.len()).max().unwrap_or(0); // Get max width
+    fn draw_at(
+        buffer: &mut Vec<u32>,
+        buffer_width: usize,
+        buffer_height: usize,
+        raster_vecs: Vec<Vec<u32>>,
+        coords: &Coords,
+    ) {
+        let object_height = raster_vecs.len();
+        let object_width = raster_vecs.iter().map(|row| row.len()).max().unwrap_or(0); // Get max width
 
-            for (dy, row) in raster_vecs.iter().enumerate() {
-                for dx in 0..object_width {
-                    let x = (coords.x + dx as f64) as usize;
-                    let y = (coords.y + dy as f64) as usize;
+        for (dy, row) in raster_vecs.iter().enumerate() {
+            for dx in 0..object_width {
+                let x = (coords.x + dx as f64) as usize;
+                let y = (coords.y + dy as f64) as usize;
 
-                    // make sure this is not out of the buffer
-                    if x < buffer_width && y < buffer_height {
-                        let index = y * buffer_width + x;
+                // make sure this is not out of the buffer
+                if x < buffer_width && y < buffer_height {
+                    let index = y * buffer_width + x;
 
-                        let maybe_pixel = row.get(dx).cloned();
-                        if let Some(pixel) = maybe_pixel {
-                            buffer[index] = pixel;
-                        }
+                    let maybe_pixel = row.get(dx).cloned();
+                    if let Some(pixel) = maybe_pixel {
+                        buffer[index] = pixel;
                     }
                 }
             }

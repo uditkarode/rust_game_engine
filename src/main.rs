@@ -18,7 +18,7 @@ fn main() -> Result<(), anyhow::Error> {
         x: (&window_size.width / 2) as f64,
         y: (&window_size.height / 2) as f64,
     };
-    let ball = Ball::new(ball_coords, 50.0, "#166163");
+    let ball = Ball::new(ball_coords, 20.0, "#7a2e0d");
 
     engine.add_game_object(ball);
 
