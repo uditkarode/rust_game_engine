@@ -3,7 +3,7 @@ use minifb::{Key, ScaleMode, Window, WindowOptions};
 use super::{
     constants::*,
     game_object::{CollisionShape, GameObject},
-    types::{WindowSize, XYPair},
+    types::{ObjectInfo, WindowSize, XYPair},
 };
 
 pub struct Engine {
@@ -48,6 +48,7 @@ impl Engine {
     fn apply_velocities(object: &mut Box<dyn GameObject>) {
         let coords = object.get_coords();
         let velocities = object.get_velocities();
+
         object.set_coords(&XYPair {
             x: coords.x + velocities.x,
             y: coords.y + velocities.y,
@@ -61,21 +62,21 @@ impl Engine {
                 let mut velocities = object.get_velocities().clone();
                 let diameter = 2.0 * radius;
 
+                // x axis window collision
                 if coords.x - diameter < 0.0 {
                     coords.x = diameter;
                     velocities.x = -velocities.x * COLLISION_DAMPING_FACTOR;
                 }
-
                 if coords.x + diameter > window_size.width as f64 {
                     coords.x = window_size.width as f64 - diameter;
                     velocities.x = -velocities.x * COLLISION_DAMPING_FACTOR;
                 }
 
+                // y axis window collision
                 if coords.y - diameter < 0.0 {
                     coords.y = diameter;
                     velocities.y = -velocities.y * COLLISION_DAMPING_FACTOR;
                 }
-
                 if coords.y + diameter > window_size.height as f64 {
                     coords.y = window_size.height as f64 - diameter;
                     velocities.y = -velocities.y * COLLISION_DAMPING_FACTOR;
@@ -85,6 +86,14 @@ impl Engine {
                 object.set_velocities(&velocities);
             }
         }
+    }
+
+    fn update_object_info(window_size: &WindowSize, object: &mut Box<dyn GameObject>) {
+        let object_info = ObjectInfo {
+            window_size: window_size.clone(),
+        };
+
+        object.set_object_info(&object_info);
     }
 
     fn draw(buffer: &mut Vec<u32>, window_size: &WindowSize, object: &Box<dyn GameObject>) {
@@ -144,11 +153,11 @@ impl Engine {
             },
         )?);
 
-        let keys = self.window.as_ref().unwrap().get_keys();
         while self.window.as_ref().unwrap().is_open()
             && !self.window.as_ref().unwrap().is_key_down(Key::Escape)
         {
             let start_time = std::time::Instant::now();
+            let keys = self.window.as_ref().unwrap().get_keys();
 
             // clear the display buffer
             self.buffer.iter_mut().for_each(|p| *p = 0);
@@ -162,6 +171,9 @@ impl Engine {
 
                 // perform collision checks with the window
                 Engine::collision_checks(&self.window_size, object);
+
+                // update the game object's info
+                Engine::update_object_info(&self.window_size, object);
 
                 // allow the object to react to pressed keys
                 object.handle_input(&keys);
