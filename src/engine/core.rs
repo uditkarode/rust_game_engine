@@ -63,8 +63,8 @@ impl Engine {
                 let diameter = 2.0 * radius;
 
                 // x axis window collision
-                if coords.x - diameter < 0.0 {
-                    coords.x = diameter;
+                if coords.x <= 0.0 {
+                    coords.x = 0.0;
                     velocities.x = -velocities.x * COLLISION_DAMPING_FACTOR;
                 }
                 if coords.x + diameter > window_size.width as f64 {
