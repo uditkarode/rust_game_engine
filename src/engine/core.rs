@@ -3,20 +3,14 @@ use minifb::{Key, ScaleMode, Window, WindowOptions};
 use super::{
     constants::*,
     game_object::{CollisionShape, GameObject},
-    types::{Coords, WindowSize},
+    types::{WindowSize, XYPair},
 };
-
-struct InternalGameObject {
-    object: Box<dyn GameObject>,
-    vx: f64,
-    vy: f64,
-}
 
 pub struct Engine {
     window: Option<Window>,
     buffer: Vec<u32>,
     window_size: WindowSize,
-    objects: Vec<InternalGameObject>,
+    objects: Vec<Box<dyn GameObject>>,
 }
 
 // public functions
@@ -31,66 +25,69 @@ impl Engine {
     }
 
     pub fn add_game_object(&mut self, game_object: impl GameObject + 'static) {
-        self.objects.push(InternalGameObject {
-            object: Box::new(game_object),
-            vx: 0.0,
-            vy: 0.0,
-        })
+        self.objects.push(Box::new(game_object))
     }
 }
 
 // internal functions
 impl Engine {
-    fn calc_velocities(internal_object: &mut InternalGameObject) {
+    fn calc_velocities(object: &mut Box<dyn GameObject>) {
+        let mut velocities = object.get_velocities().clone();
+
         // apply gravity
-        let gravity = GRAVITY * internal_object.object.weight_factor() * DT;
-        internal_object.vy += gravity;
+        let gravity = GRAVITY * object.weight_factor() * DT;
+        velocities.y += gravity;
 
         // apply air drag
-        internal_object.vx *= 1.0 - (AIR_RESISTANCE * DT);
-        internal_object.vy *= 1.0 - (AIR_RESISTANCE * DT);
+        velocities.x *= 1.0 - (AIR_RESISTANCE * DT);
+        velocities.y *= 1.0 - (AIR_RESISTANCE * DT);
+
+        object.set_velocities(&velocities);
     }
 
-    fn apply_velocities(internal_object: &mut InternalGameObject) {
-        let coords = internal_object.object.get_coords();
-        let x = coords.x + internal_object.vx;
-        let y = coords.y + internal_object.vy;
-        internal_object.object.set_coords(Coords { x, y });
+    fn apply_velocities(object: &mut Box<dyn GameObject>) {
+        let coords = object.get_coords();
+        let velocities = object.get_velocities();
+        object.set_coords(&XYPair {
+            x: coords.x + velocities.x,
+            y: coords.y + velocities.y,
+        });
     }
 
-    fn collision_checks(window_size: &WindowSize, internal_object: &mut InternalGameObject) {
-        match internal_object.object.collision_shape() {
+    fn collision_checks(window_size: &WindowSize, object: &mut Box<dyn GameObject>) {
+        match object.collision_shape() {
             CollisionShape::Circle(radius) => {
-                let mut coords = internal_object.object.get_coords().clone();
+                let mut coords = object.get_coords().clone();
+                let mut velocities = object.get_velocities().clone();
                 let diameter = 2.0 * radius;
 
                 if coords.x - diameter < 0.0 {
                     coords.x = diameter;
-                    internal_object.vx = -internal_object.vx * COLLISION_DAMPING_FACTOR;
+                    velocities.x = -velocities.x * COLLISION_DAMPING_FACTOR;
                 }
 
                 if coords.x + diameter > window_size.width as f64 {
                     coords.x = window_size.width as f64 - diameter;
-                    internal_object.vx = -internal_object.vx * COLLISION_DAMPING_FACTOR;
+                    velocities.x = -velocities.x * COLLISION_DAMPING_FACTOR;
                 }
 
                 if coords.y - diameter < 0.0 {
                     coords.y = diameter;
-                    internal_object.vy = -internal_object.vy * COLLISION_DAMPING_FACTOR;
+                    velocities.y = -velocities.y * COLLISION_DAMPING_FACTOR;
                 }
 
                 if coords.y + diameter > window_size.height as f64 {
                     coords.y = window_size.height as f64 - diameter;
-                    internal_object.vy = -internal_object.vy * COLLISION_DAMPING_FACTOR;
+                    velocities.y = -velocities.y * COLLISION_DAMPING_FACTOR;
                 }
 
-                internal_object.object.set_coords(coords);
+                object.set_coords(&coords);
+                object.set_velocities(&velocities);
             }
         }
     }
 
-    fn draw(buffer: &mut Vec<u32>, window_size: &WindowSize, internal_object: &InternalGameObject) {
-        let object = &internal_object.object;
+    fn draw(buffer: &mut Vec<u32>, window_size: &WindowSize, object: &Box<dyn GameObject>) {
         let coords = object.get_coords();
         let raster_vecs = object.draw();
 
@@ -111,7 +108,7 @@ impl Engine {
         buffer_width: usize,
         buffer_height: usize,
         raster_vecs: Vec<Vec<u32>>,
-        coords: &Coords,
+        coords: &XYPair,
     ) {
         let object_width = raster_vecs.iter().map(|row| row.len()).max().unwrap_or(0);
 
@@ -148,7 +145,9 @@ impl Engine {
         )?);
 
         let keys = self.window.as_ref().unwrap().get_keys();
-        while self.window.as_ref().unwrap().is_open() && !keys.contains(&Key::Escape) {
+        while self.window.as_ref().unwrap().is_open()
+            && !self.window.as_ref().unwrap().is_key_down(Key::Escape)
+        {
             let start_time = std::time::Instant::now();
 
             // clear the display buffer
@@ -165,7 +164,7 @@ impl Engine {
                 Engine::collision_checks(&self.window_size, object);
 
                 // allow the object to react to pressed keys
-                object.object.handle_input(&keys);
+                object.handle_input(&keys);
 
                 // draw the object on the buffer at it's coords
                 Engine::draw(&mut self.buffer, &self.window_size, object);

@@ -1,6 +1,6 @@
 use engine::{
     core::Engine,
-    types::{Coords, WindowSize},
+    types::{WindowSize, XYPair},
 };
 use objects::ball::Ball;
 
@@ -14,11 +14,12 @@ fn main() -> Result<(), anyhow::Error> {
     };
     let mut engine = Engine::new(&window_size)?;
 
-    let ball_coords = Coords {
-        x: (&window_size.width / 2) as f64,
-        y: (&window_size.height / 2) as f64,
+    let radius = 24.0;
+    let ball_coords = XYPair {
+        x: (&window_size.width / 2) as f64 - radius,
+        y: (&window_size.height / 2) as f64 - radius,
     };
-    let ball = Ball::new(ball_coords, 24.0, "#cf5353");
+    let ball = Ball::new(ball_coords, radius, "#cf5353");
 
     engine.add_game_object(ball);
 

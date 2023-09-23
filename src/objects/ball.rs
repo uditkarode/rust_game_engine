@@ -2,20 +2,23 @@ use minifb::Key;
 
 use crate::engine::{
     game_object::{CollisionShape, GameObject},
-    types::Coords,
+    types::XYPair,
 };
 
 pub struct Ball {
-    coords: Coords,
+    coords: XYPair,
+    velocities: XYPair,
     radius: f64,
     color: u32,
 }
 
 impl Ball {
-    pub fn new(coords: Coords, radius: f64, color_hex: &str) -> Self {
+    pub fn new(coords: XYPair, radius: f64, color_hex: &str) -> Self {
         let color = u32::from_str_radix(&color_hex[1..], 16).unwrap_or(0xFFFFFF);
+        let velocities = XYPair { x: 0.0, y: 0.0 };
         Self {
             coords,
+            velocities,
             radius,
             color,
         }
@@ -49,17 +52,33 @@ impl GameObject for Ball {
         raster
     }
 
-    fn get_coords(&self) -> &Coords {
+    fn get_coords(&self) -> &XYPair {
         &self.coords
     }
 
-    fn set_coords(&mut self, coords: Coords) {
-        self.coords = coords;
+    fn set_coords(&mut self, coords: &XYPair) {
+        self.coords = coords.clone();
+    }
+
+    fn get_velocities(&self) -> &XYPair {
+        &self.velocities
+    }
+
+    fn set_velocities(&mut self, velocities: &XYPair) {
+        self.velocities = velocities.clone();
     }
 
     fn handle_input(&mut self, keys: &[Key]) {
-        if keys.contains(&Key::A) {}
-        if keys.contains(&Key::D) {}
-        if keys.contains(&Key::W) {}
+        if keys.contains(&Key::A) {
+            self.velocities.x += 200.0;
+        }
+
+        if keys.contains(&Key::D) {
+            self.velocities.x -= 200.0;
+        }
+
+        if keys.contains(&Key::W) {
+            self.velocities.y += 200.0;
+        }
     }
 }

@@ -5,7 +5,7 @@ pub struct WindowSize {
 }
 
 #[derive(Clone)]
-pub struct Coords {
+pub struct XYPair {
     pub x: f64,
     pub y: f64,
 }
