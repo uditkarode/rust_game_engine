@@ -11,38 +11,11 @@ pub enum CollisionShape {
 }
 
 // game object common
+#[derive(Default)]
 pub struct GameObjectCommon {
     pub coords: XYPair,
     pub velocities: XYPair,
     pub object_info: Option<ObjectInfo>,
-}
-
-impl GameObjectCommon {
-    pub fn new() -> Self {
-        Self {
-            coords: XYPair { x: 0.0, y: 0.0 },
-            velocities: XYPair { x: 0.0, y: 0.0 },
-            object_info: None,
-        }
-    }
-
-    pub fn get_coords(&self) -> &XYPair {
-        &self.coords
-    }
-    pub fn set_coords(&mut self, coords: &XYPair) {
-        self.coords = coords.clone();
-    }
-
-    pub fn get_velocities(&self) -> &XYPair {
-        &self.velocities
-    }
-    pub fn set_velocities(&mut self, velocities: &XYPair) {
-        self.velocities = velocities.clone();
-    }
-
-    pub fn set_object_info(&mut self, object_info: &ObjectInfo) {
-        self.object_info = Some(object_info.clone());
-    }
 }
 
 // game object

@@ -19,8 +19,8 @@ pub struct Ball {
 impl Ball {
     pub fn new(coords: XYPair, radius: f64, color_hex: &str) -> Self {
         let color = u32::from_str_radix(&color_hex[1..], 16).unwrap_or(0xFFFFFF);
-        let mut common = GameObjectCommon::new();
-        common.set_coords(&coords);
+        let mut common = GameObjectCommon::default();
+        common.coords = coords;
         let diameter = radius * 2.0;
 
         Self {
