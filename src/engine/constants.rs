@@ -1,6 +1,8 @@
-pub const COLLISION_DAMPING_FACTOR: f64 = 0.6;
+pub const DEFAULT_COLLISION_DAMPING_FACTOR: f64 = 6.0 / 10.0;
 
-pub const AIR_RESISTANCE: f64 = 0.1;
+pub const GROUND_DRAG_FACTOR: f64 = 0.4;
+
+pub const AIR_RESISTANCE_FACTOR: f64 = 0.1;
 
 pub const GRAVITY: f64 = 100.0;
 

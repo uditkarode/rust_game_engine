@@ -39,8 +39,8 @@ impl Engine {
         velocities.y += gravity;
 
         // apply air drag
-        velocities.x *= 1.0 - (AIR_RESISTANCE * DT);
-        velocities.y *= 1.0 - (AIR_RESISTANCE * DT);
+        velocities.x *= 1.0 - (AIR_RESISTANCE_FACTOR * DT);
+        velocities.y *= 1.0 - (AIR_RESISTANCE_FACTOR * DT);
 
         object.common().set_velocities(&velocities);
     }
@@ -63,24 +63,48 @@ impl Engine {
                 let mut velocities = object.common().get_velocities().clone();
                 let diameter = 2.0 * radius;
 
+                let on_ground = if coords.y + object.collision_shape().effective_size().y <= 0.0 {
+                    true
+                } else {
+                    false
+                };
+
+                println!("{}", coords.y + object.collision_shape().effective_size().y);
+
+                let on_x_collision = |velocities: &mut XYPair| {
+                    // velocities.y = -velocities.y * object.bounciness();
+                    -velocities.x * object.bounciness()
+                };
+
+                let on_y_collision = |velocities: &mut XYPair| {
+                    // if we're just rolling on the ground, apply ground drag
+                    velocities.y = if on_ground && velocities.y <= 0.0 {
+                        println!("applying drag");
+                        -velocities.y * GROUND_DRAG_FACTOR
+                    } else {
+                        // println!("not cus: {} and {}", on_ground, velocities.y);
+                        -velocities.y * object.bounciness()
+                    }
+                };
+
                 // x axis window collision
                 if coords.x <= 0.0 {
                     coords.x = 0.0;
-                    velocities.x = -velocities.x * COLLISION_DAMPING_FACTOR;
+                    on_x_collision(&mut velocities);
                 }
                 if coords.x + diameter > window_size.width as f64 {
                     coords.x = window_size.width as f64 - diameter;
-                    velocities.x = -velocities.x * COLLISION_DAMPING_FACTOR;
+                    on_x_collision(&mut velocities);
                 }
 
                 // y axis window collision
                 if coords.y - diameter < 0.0 {
                     coords.y = diameter;
-                    velocities.y = -velocities.y * COLLISION_DAMPING_FACTOR;
+                    on_y_collision(&mut velocities);
                 }
                 if coords.y + diameter > window_size.height as f64 {
                     coords.y = window_size.height as f64 - diameter;
-                    velocities.y = -velocities.y * COLLISION_DAMPING_FACTOR;
+                    on_y_collision(&mut velocities);
                 }
 
                 object.common().set_coords(&coords);

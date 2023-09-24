@@ -1,11 +1,27 @@
 use minifb::Key;
 
-use super::types::{ObjectInfo, XYPair};
+use super::{
+    constants::DEFAULT_COLLISION_DAMPING_FACTOR,
+    types::{ObjectInfo, XYPair},
+};
 
+// collision shape
 pub enum CollisionShape {
     Circle(f64),
 }
 
+impl CollisionShape {
+    pub fn effective_size(&self) -> XYPair {
+        match self {
+            Self::Circle(radius) => XYPair {
+                x: radius * 2.0,
+                y: radius * 2.0,
+            },
+        }
+    }
+}
+
+// game object common
 pub struct GameObjectCommon {
     pub coords: XYPair,
     pub velocities: XYPair,
@@ -40,10 +56,19 @@ impl GameObjectCommon {
     }
 }
 
+// game object
 pub trait GameObject {
     fn common(&mut self) -> &mut GameObjectCommon;
+
     fn weight_factor(&self) -> f64;
-    fn draw(&self) -> Vec<Vec<u32>>;
+
+    fn bounciness(&self) -> f64 {
+        DEFAULT_COLLISION_DAMPING_FACTOR
+    }
+
     fn collision_shape(&self) -> CollisionShape;
+
+    fn draw(&self) -> Vec<Vec<u32>>;
+
     fn handle_input(&mut self, _keys: &[Key]) {}
 }
