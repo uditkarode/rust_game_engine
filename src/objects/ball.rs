@@ -1,47 +1,49 @@
 use minifb::Key;
 
 use crate::engine::{
-    game_object::{CollisionShape, GameObject},
-    types::{ObjectInfo, XYPair},
+    game_object::{CollisionShape, GameObject, GameObjectCommon},
+    types::XYPair,
 };
 
 const KB_X_BOOST: f64 = 0.2;
-const KB_Y_BOOST: f64 = 24.0;
+const KB_Y_BOOST: f64 = 16.0;
 
 pub struct Ball {
-    coords: XYPair,
-    velocities: XYPair,
-    object_info: Option<ObjectInfo>,
-
     radius: f64,
     diameter: f64,
     color: u32,
+
+    common: GameObjectCommon,
 }
 
 impl Ball {
     pub fn new(coords: XYPair, radius: f64, color_hex: &str) -> Self {
         let color = u32::from_str_radix(&color_hex[1..], 16).unwrap_or(0xFFFFFF);
-        let velocities = XYPair { x: 0.0, y: 0.0 };
+        let mut common = GameObjectCommon::new();
+        common.set_coords(&coords);
         let diameter = radius * 2.0;
 
         Self {
-            object_info: None,
-            velocities,
-            coords,
+            color,
             radius,
             diameter,
-            color,
+
+            common,
         }
     }
 }
 
 impl GameObject for Ball {
     fn weight_factor(&self) -> f64 {
-        1.2
+        1.1
     }
 
     fn collision_shape(&self) -> CollisionShape {
-        return CollisionShape::Circle(self.radius);
+        CollisionShape::Circle(self.radius)
+    }
+
+    fn common(&mut self) -> &mut GameObjectCommon {
+        &mut self.common
     }
 
     fn draw(&self) -> Vec<Vec<u32>> {
@@ -64,44 +66,22 @@ impl GameObject for Ball {
 
     fn handle_input(&mut self, keys: &[Key]) {
         if keys.contains(&Key::A) {
-            self.velocities.x -= KB_X_BOOST;
+            self.common.velocities.x -= KB_X_BOOST;
         }
 
         if keys.contains(&Key::D) {
-            self.velocities.x += KB_X_BOOST;
+            self.common.velocities.x += KB_X_BOOST;
         }
 
         // jump if we are on the ground AND have 0 or lesser y velocity
         if keys.contains(&Key::W) {
-            if let Some(info) = &self.object_info {
-                if self.velocities.y < 0.0
-                    && self.coords.y + self.diameter == info.window_size.height as f64
+            if let Some(info) = &self.common.object_info {
+                if self.common.velocities.y < 0.0
+                    && self.common.coords.y + self.diameter == info.window_size.height as f64
                 {
-                    self.velocities.y -= KB_Y_BOOST;
+                    self.common.velocities.y -= KB_Y_BOOST;
                 }
             }
         }
-    }
-
-    // getters and setters
-    fn get_coords(&self) -> &XYPair {
-        &self.coords
-    }
-    fn set_coords(&mut self, coords: &XYPair) {
-        self.coords = coords.clone();
-    }
-
-    fn get_velocities(&self) -> &XYPair {
-        &self.velocities
-    }
-    fn set_velocities(&mut self, velocities: &XYPair) {
-        self.velocities = velocities.clone();
-    }
-
-    fn get_object_info(&self) -> Option<&ObjectInfo> {
-        self.object_info.as_ref()
-    }
-    fn set_object_info(&mut self, object_info: &ObjectInfo) {
-        self.object_info = Some(object_info.clone());
     }
 }

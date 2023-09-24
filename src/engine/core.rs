@@ -32,7 +32,7 @@ impl Engine {
 // internal functions
 impl Engine {
     fn calc_velocities(object: &mut Box<dyn GameObject>) {
-        let mut velocities = object.get_velocities().clone();
+        let mut velocities = object.common().get_velocities().clone();
 
         // apply gravity
         let gravity = GRAVITY * object.weight_factor() * DT;
@@ -42,14 +42,15 @@ impl Engine {
         velocities.x *= 1.0 - (AIR_RESISTANCE * DT);
         velocities.y *= 1.0 - (AIR_RESISTANCE * DT);
 
-        object.set_velocities(&velocities);
+        object.common().set_velocities(&velocities);
     }
 
     fn apply_velocities(object: &mut Box<dyn GameObject>) {
-        let coords = object.get_coords();
-        let velocities = object.get_velocities();
+        let common = object.common();
+        let coords = common.get_coords().clone();
+        let velocities = common.get_velocities().clone();
 
-        object.set_coords(&XYPair {
+        object.common().set_coords(&XYPair {
             x: coords.x + velocities.x,
             y: coords.y + velocities.y,
         });
@@ -58,8 +59,8 @@ impl Engine {
     fn collision_checks(window_size: &WindowSize, object: &mut Box<dyn GameObject>) {
         match object.collision_shape() {
             CollisionShape::Circle(radius) => {
-                let mut coords = object.get_coords().clone();
-                let mut velocities = object.get_velocities().clone();
+                let mut coords = object.common().get_coords().clone();
+                let mut velocities = object.common().get_velocities().clone();
                 let diameter = 2.0 * radius;
 
                 // x axis window collision
@@ -82,8 +83,8 @@ impl Engine {
                     velocities.y = -velocities.y * COLLISION_DAMPING_FACTOR;
                 }
 
-                object.set_coords(&coords);
-                object.set_velocities(&velocities);
+                object.common().set_coords(&coords);
+                object.common().set_velocities(&velocities);
             }
         }
     }
@@ -93,12 +94,14 @@ impl Engine {
             window_size: window_size.clone(),
         };
 
-        object.set_object_info(&object_info);
+        object.common().set_object_info(&object_info);
     }
 
-    fn draw(buffer: &mut Vec<u32>, window_size: &WindowSize, object: &Box<dyn GameObject>) {
-        let coords = object.get_coords();
+    fn draw(buffer: &mut Vec<u32>, window_size: &WindowSize, object: &mut Box<dyn GameObject>) {
         let raster_vecs = object.draw();
+
+        let common = object.common();
+        let coords = &common.get_coords();
 
         Engine::draw_at(
             buffer,
