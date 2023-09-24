@@ -10,17 +10,6 @@ pub enum CollisionShape {
     Circle(f64),
 }
 
-impl CollisionShape {
-    pub fn effective_size(&self) -> XYPair {
-        match self {
-            Self::Circle(radius) => XYPair {
-                x: radius * 2.0,
-                y: radius * 2.0,
-            },
-        }
-    }
-}
-
 // game object common
 pub struct GameObjectCommon {
     pub coords: XYPair,

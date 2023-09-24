@@ -6,7 +6,7 @@ use crate::engine::{
 };
 
 const KB_X_BOOST: f64 = 0.2;
-const KB_Y_BOOST: f64 = 14.0;
+const KB_Y_BOOST: f64 = 16.0;
 
 pub struct Ball {
     radius: f64,

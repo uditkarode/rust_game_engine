@@ -63,27 +63,21 @@ impl Engine {
                 let mut velocities = object.common().get_velocities().clone();
                 let diameter = 2.0 * radius;
 
-                let on_ground = if coords.y + object.collision_shape().effective_size().y <= 0.0 {
+                let on_ground = if coords.y + diameter >= window_size.height as f64 {
                     true
                 } else {
                     false
                 };
 
-                println!("{}", coords.y + object.collision_shape().effective_size().y);
-
-                let on_x_collision = |velocities: &mut XYPair| {
-                    // velocities.y = -velocities.y * object.bounciness();
-                    -velocities.x * object.bounciness()
-                };
+                let on_x_collision =
+                    |velocities: &mut XYPair| velocities.x = -velocities.x * object.bounciness();
 
                 let on_y_collision = |velocities: &mut XYPair| {
+                    velocities.y = -velocities.y * object.bounciness();
+
                     // if we're just rolling on the ground, apply ground drag
-                    velocities.y = if on_ground && velocities.y <= 0.0 {
-                        println!("applying drag");
-                        -velocities.y * GROUND_DRAG_FACTOR
-                    } else {
-                        // println!("not cus: {} and {}", on_ground, velocities.y);
-                        -velocities.y * object.bounciness()
+                    if on_ground && velocities.y.abs() <= 1.0 {
+                        velocities.x -= velocities.x * GROUND_DRAG_FACTOR
                     }
                 };
 
