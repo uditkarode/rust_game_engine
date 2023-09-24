@@ -174,6 +174,12 @@ impl Engine {
             },
         )?);
 
+        let duration_per_frame = std::time::Duration::from_secs(1) / FPS.try_into()?;
+        self.window
+            .as_mut()
+            .unwrap()
+            .limit_update_rate(Some(duration_per_frame));
+
         while self.window.as_ref().unwrap().is_open()
             && !self.window.as_ref().unwrap().is_key_down(Key::Escape)
         {
