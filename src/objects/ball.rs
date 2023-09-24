@@ -47,12 +47,12 @@ impl GameObject for Ball {
     }
 
     fn draw(&self) -> Vec<Vec<u32>> {
-        let mut raster = vec![vec![0; (self.radius * 2.0) as usize]; (self.radius * 2.0) as usize];
+        let mut raster = vec![vec![0; self.diameter as usize]; self.diameter as usize];
         let h = self.radius;
         let k = self.radius;
 
-        for y in 0..(self.radius * 2.0) as usize {
-            for x in 0..(self.radius * 2.0) as usize {
+        for y in 0..self.diameter as usize {
+            for x in 0..self.diameter as usize {
                 let dx = (x as f64 - h).abs();
                 let dy = (y as f64 - k).abs();
                 if (dx * dx + dy * dy).sqrt() <= self.radius {
